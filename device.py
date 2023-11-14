@@ -16,7 +16,7 @@ for i in range(pa.get_device_count()):
     #print(dev)
 stream = pa.open(format = pyaudio.paInt16,channels=1,rate=44100,input_device_index=3,input=True)
 numpy.set_printoptions(threshold=numpy.inf)
-f = open("demofile2.txt", "a")
+#f = open("demofile2.txt", "a")
 count = 0
 while True and count < 1000:
         raws=stream.read(1024, exception_on_overflow = False)
