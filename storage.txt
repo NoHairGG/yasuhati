@@ -1,0 +1,5 @@
+conda activate training_ground
+cd anaconda3_project
+cd pygame
+cd yasuhati
+python starlight.py

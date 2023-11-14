@@ -28,24 +28,52 @@ def load_sound(file):
     return None
 
 class Player(pg.sprite.Sprite):
+    """0 for idle, 1 for moving, 2 for jumping"""
     images: List[pg.Surface] = []
 
     def __init__(self, *groups):
         pg.sprite.Sprite.__init__(self, *groups)
-        self.image = self.images[0]    
+        self.image = self.images[0]
+        self.rect = self.image.get_rect(midbottom=SCREENRECT.midbottom)
+        self.reloading = 0
+        self.origtop = self.rect.top
+        self.facing = -1
+        # print("hello madafaka")
 
-pg.init()
-screen = pg.display.set_mode((1280, 720))
+    def move(self):
+        """actually move the background"""
+        self.image = self.images[1]
+        print("moving")
+    
+    def jump(self):
+        """move upward and downward"""
+        self.image = self.images[2]
+        print("jumping")
+
+SCREENRECT = pg.Rect(0, 0, 1280, 720)
+    
 clock = pg.time.Clock()
 running = True
+pg.init()
 
 while running:
     for event in pg.event.get():
         if event.type == pg.QUIT:
             running = False
-    
-    screen.fill("gray")
+    """screen setup"""
+    winstyle = 0  # |FULLSCREEN
+    bestdepth = pg.display.mode_ok(SCREENRECT.size, winstyle, 32)
+    screen = pg.display.set_mode(SCREENRECT.size, winstyle, bestdepth)
     pg.display.flip()
-    clock.tick(60)
+    """resource initiazation after screen setup"""
+    Player.images = [load_image(im) for im in ("idle.jpg", "move.jpg", "jump.jpg")]
+    """set player """
+    all = pg.sprite.RenderUpdates()
+    player = Player(all)
+
+    # draw the elements
+    dirty = all.draw(screen)
+    pg.display.update(dirty)
+    clock.tick(30)
 
 pg.quit()
