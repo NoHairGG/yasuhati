@@ -1,3 +1,4 @@
+import aubio
 import pyaudio
 import numpy
 import audioop
@@ -70,7 +71,10 @@ SCREENRECT = pg.Rect(0, 0, 1280, 720)
 def main(winstyle=0):
     """audio input setup"""
     pa = pyaudio.PyAudio()
-    stream = pa.open(format = pyaudio.paInt16,channels=1,rate=44100,input_device_index=3,input=True)
+    stream = pa.open(format = pyaudio.paFloat32,channels=1,rate=44100,input_device_index=3,input=True,frames_per_buffer=1024)
+    pDetection = aubio.pitch("default", 4096, 1024, 44100)
+    pDetection.set_unit("Hz")
+    pDetection.set_silence(-40)
     """program flow"""
     clock = pg.time.Clock()
     scroll = 0
@@ -110,9 +114,11 @@ def main(winstyle=0):
                 player.jump()
             # check volume
             raws=stream.read(1024, exception_on_overflow = False)
-            samples=numpy.frombuffer(raws, dtype=numpy.int16)
+            samples=numpy.frombuffer(raws, dtype=numpy.float32)
             numpy.set_printoptions(threshold=numpy.inf)
             rms = audioop.rms(samples, 2)
+            pitch = pDetection(samples)[0]
+            print(pitch)
             # print(rms)
             if rms > 1000:
                 player.jump_volume(rms)
@@ -126,7 +132,7 @@ def main(winstyle=0):
             scroll -= 6
             if abs(scroll) > bgdtile.get_width():
                 scroll = 0
-            print(scroll)
+            # print(scroll)
             pg.display.flip()
             # clear/erase the last drawn sprites
             all.clear(screen, bgdtile)
