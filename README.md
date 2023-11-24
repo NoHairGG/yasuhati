@@ -4,7 +4,7 @@ starlight.py for main game
 device.py for audio
 pitch.py for audio pitch
 
-v0 - v0.2
+v0 - v0.2.1
 omitted
 v0.3
 added button event, press p for object
