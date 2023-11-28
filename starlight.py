@@ -6,7 +6,7 @@ import os
 import pyaudio
 import pygame as pg
 import random
-from sense_hat import SenseHat
+# from sense_hat import SenseHat
 import time
 import threading
 from typing import List
@@ -14,11 +14,11 @@ from typing import List
 # some global variable
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 SCREENRECT = pg.Rect(0, 0, 640, 360)
-OBSTACLE_RELOAD_FRAME = 30
+OBSTACLE_RELOAD_FRAME = 120
 # SCORE = 0
 # DISTANCE = 0
-sense = SenseHat()
-sense.low_light = True
+# sense = SenseHat()
+# sense.low_light = True
 
 W = (255, 255, 255)
 P = (0, 0, 0)
@@ -44,7 +44,7 @@ def move_food(maze, foodx, foody, notex, notey, counter):
     score = 0
     if ((foodx == notex) and (foody == notey)):
         randomFood = True
-        #delay += delayDecrease
+        score = 1
 
     if(foodx <= 0):
         randomFood = True
@@ -54,7 +54,6 @@ def move_food(maze, foodx, foody, notex, notey, counter):
 
     #spawn new food
     if randomFood:
-        score = 1
         foodx = 7
         foody = random.randint(3, 7)
 
@@ -108,7 +107,7 @@ def load_music(file):
 
 def microphone_setup():
     pa = pyaudio.PyAudio()
-    stream = pa.open(format = pyaudio.paFloat32,channels=1,rate=44100,input_device_index=3,input=True,frames_per_buffer=1024)
+    stream = pa.open(format = pyaudio.paFloat32,channels=1,rate=44100,input_device_index=1,input=True,frames_per_buffer=1024)
     pDetection = aubio.pitch("default", 4096, 1024, 44100)
     pDetection.set_unit("Hz")
     pDetection.set_silence(-30)
@@ -315,7 +314,7 @@ def main(winstyle=0):
                 clock_div = clock_div + 1
             maze, foodx, foody, token = move_food(maze, foodx, foody, notex, notey, clock_div)
             SCORE = SCORE + token
-            sense.set_pixels(sum(maze,[]))
+            # sense.set_pixels(sum(maze,[]))
             maze[notey][notex] = P
             maze[foody][foodx] = P
             # scroll da background
@@ -338,7 +337,7 @@ def main(winstyle=0):
                 result += "M, "
                 result += (str(SCORE))
                 result += "FOOD"
-                sense.show_message(result,text_colour=R)
+                # sense.show_message(result,text_colour=R)
                 player.kill()
             pg.display.flip()
             # clear/erase the last drawn sprites
@@ -354,4 +353,4 @@ def main(winstyle=0):
 if __name__ == "__main__":
     main()
     pg.quit()
-    sense.clear()
+    # sense.clear()

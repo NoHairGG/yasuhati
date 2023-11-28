@@ -26,3 +26,4 @@ while True and count < 1000:
         rms = audioop.rms(samples, 2)
         print(rms)
         count = count + 1
+        #abaaba
