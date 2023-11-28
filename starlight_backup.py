@@ -6,71 +6,14 @@ import os
 import pyaudio
 import pygame as pg
 import random
-from sense_hat import SenseHat
-import time
 import threading
 from typing import List
 
 # some global variable
 main_dir = os.path.split(os.path.abspath(__file__))[0]
-SCREENRECT = pg.Rect(0, 0, 640, 360)
-OBSTACLE_RELOAD_FRAME = 30
-# SCORE = 0
-# DISTANCE = 0
-sense = SenseHat()
-sense.low_light = True
 
-W = (255, 255, 255)
-P = (0, 0, 0)
-R = (255, 0, 0)
-G = (0, 255, 0)
-Y = (255, 255, 0)
-B = (0, 0, 255)
-
-def move_marble(pitch, x, y):
-    if pitch >= 360:
-        new_y = 0
-    elif pitch < 50:
-        new_y = 6
-    else:
-        new_y = pitch / 50
-        new_y = math.floor(new_y)
-        new_y = 6 - new_y
-    return x, new_y
-
-def move_food(maze, foodx, foody, notex, notey, counter):
-    #when food ate
-    randomFood = False
-    score = 0
-    if ((foodx == notex) and (foody == notey)):
-        randomFood = True
-        #delay += delayDecrease
-
-    if(foodx <= 0):
-        randomFood = True
-    elif(foodx > 0):
-        if counter == 5:
-            foodx -= 1
-
-    #spawn new food
-    if randomFood:
-        score = 1
-        foodx = 7
-        foody = random.randint(3, 7)
-
-    maze[foody][foodx] = B
-    return maze, foodx, foody, score
-
-def marble(maze, notex, notey, pitch):
-    notex, notey = move_marble(pitch, notex, notey)
-    if pitch == 1:
-        maze[notey][notex] = W
-    elif pitch == 2:
-        maze[notey][notex] = R
-    else:
-        maze[notey][notex] = Y
-    # maze[foodPosY][foodPosX] = R
-    return maze, notex, notey
+def senseHAT_event():
+    return None
 
 def load_image(file):
     """loads an image, prepares it for play"""
@@ -93,36 +36,23 @@ def load_sound(file):
         print(f"Warning, unable to load, {file}")
     return None
 
-def load_music(file):
-    """because pygame can be compiled without mixer."""
-    if not pg.mixer:
-        return None
-    file = os.path.join(main_dir, "data", file)
-    try:
-        music = pg.mixer.music.load(file)
-        pg.mixer.music.play(-1)
-        return music
-    except pg.error:
-        print(f"Warning, unable to load, {file}")
-    return None
-
 def microphone_setup():
     pa = pyaudio.PyAudio()
-    stream = pa.open(format = pyaudio.paFloat32,channels=1,rate=44100,input_device_index=3,input=True,frames_per_buffer=1024)
+    stream = pa.open(format = pyaudio.paFloat32,channels=1,rate=44100,input_device_index=1,input=True,frames_per_buffer=1024)
     pDetection = aubio.pitch("default", 4096, 1024, 44100)
     pDetection.set_unit("Hz")
-    pDetection.set_silence(-30)
+    pDetection.set_silence(-40)
     return pa, stream, pDetection
 
 class Obstacle(pg.sprite.Sprite):
     """Player needs to get over it, XD"""
-    speed = -15
+    speed = -5
     images: List[pg.Surface] = []
 
     def __init__(self, *groups):
         pg.sprite.Sprite.__init__(self, *groups)
         self.image = self.images[0]
-        self.rect = self.image.get_rect(center=(640, (60+random.random()*300)))
+        self.rect = self.image.get_rect(center=(640, random.random()*360))
 
     def update(self):
         """called every loop"""
@@ -178,7 +108,7 @@ class Player(pg.sprite.Sprite):
         self.origtop = self.rect.top
         self.facing = -1
         self.moving = False
-        # print("hello madafaka player, why I cant see you")
+        # print("hello madafaka")
 
     def rest(self):
         self.image = self.images[0]
@@ -212,10 +142,15 @@ class Player(pg.sprite.Sprite):
         # return pos, self.rect.right
         return pos, self.rect.centery
 
+SCREENRECT = pg.Rect(0, 0, 640, 360)
+OBSTACLE_RELOAD_FRAME = 60
+
 def main(winstyle=0):
     """audio input setup"""
     pa, stream, pDetection = microphone_setup()
+
     """program flow"""
+    scroll = 0
     obstacle_reload = OBSTACLE_RELOAD_FRAME
     running = True
     pg.init()
@@ -223,50 +158,31 @@ def main(winstyle=0):
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
-        """SCORE & DISTANCE"""
-        SCORE = 0
-        DISTANCE = 0
-        token = 0
-        """senseHat setting"""
-        notex, notey, foodx, foody = 3, 6, 7, 3
-        maze = [[P, P, P, P, P, P, P, P],
-                [P, P, P, P, P, P, P, P],
-                [P, P, P, P, P, P, P, P],
-                [P, P, P, P, P, P, P, P],
-                [P, P, P, P, P, P, P, P],
-                [P, P, P, P, P, P, P, P],
-                [P, P, P, P, P, P, P, P],
-                [G, G, G, G, G, G, G, G]]
         """display setup"""
-        winstyle = 0  #window
+        winstyle = 0  #full screen
         bestdepth = pg.display.mode_ok(SCREENRECT.size, winstyle, 32)
         screen = pg.display.set_mode(SCREENRECT.size, winstyle, bestdepth)
         # pg.display.flip()
         """resource initiazation after screen setup"""
-        Player.images = [load_image(im) for im in ("idle.jpg", "move.webp", "jump.bmp")]
+        Player.images = [load_image(im) for im in ("idle.jpg", "move.jpg", "jump.jpg")]
         Hadouken.images = [load_image("hadouken-removebg-preview.png")]
         Hadouken.images[0] = pg.transform.scale(Hadouken.images[0] , (32,32))
         Obstacle.images = [load_image("wall.bmp")]
-        Obstacle.images[0] = pg.transform.scale(Obstacle.images[0] , (32,128))
-        img = load_image("explosion1.gif")
-        Explosion.images = [img, pg.transform.flip(img, 1, 1)]
         # create the background, tile the background image if needed
-        bgdtile = load_image("yasuhati_bg.bmp")
-        background = pg.Surface(SCREENRECT.size)
-        for x in range(0 , SCREENRECT.width, bgdtile.get_width()):
-            background.blit(bgdtile, (x, 0))
-        screen.blit(bgdtile, (0, 0))
+        bgdtile = load_image("yasuhati_bg2.bmp")
+        # background = pg.Surface(SCREENRECT.size)
+        # for x in range(0 , SCREENRECT.width, bgdtile.get_width()):
+        #     background.blit(bgdtile, (x, 0))
+        # screen.blit(bgdtile, (0, 0))
+        tiles = math.ceil(720 / bgdtile.get_width()) + 1
         pg.display.update()
-        """Sound effects and bgm"""
+        """Sound effects"""
         hadouken_sound = load_sound("hadouken.mp3")
-        death_sound = load_sound("sf_death.mp3")
-        theme_song = load_music("sf_theme.mp3")
         """Initialize Game Groups"""
-        hadoukens = pg.sprite.Group()
+        hadouken = pg.sprite.Group()
         obstacles = pg.sprite.Group()
         """initial obstacle reload parameter"""
         clock = pg.time.Clock()
-        clock_div = 0
         """set player """
         all = pg.sprite.RenderUpdates()
         player = Player(all)
@@ -278,80 +194,58 @@ def main(winstyle=0):
                     return
             keystate = pg.key.get_pressed()
             # jump = keystate[pg.K_SPACE]
-            modern_command = keystate[pg.K_p]
+            command = keystate[pg.K_p]
             # print(command)
-            if (not player.moving) and (not player.reloading) and modern_command:
-                Hadouken(player.groups(), hadoukens, all)
+            if not player.reloading and command:
+                Hadouken(player.groups(), hadouken, all)
                 hadouken_sound.play()
-            player.reloading = modern_command
+            player.reloading = command
             # check volume
             raws=stream.read(1024, exception_on_overflow = False)
             samples=numpy.frombuffer(raws, dtype=numpy.float32)
             numpy.set_printoptions(threshold=numpy.inf)
-            # rms = audioop.rms(samples, 2)
+            rms = audioop.rms(samples, 2)
             pitch = pDetection(samples)[0]
             # print(rms)
-            if (pitch - last_pitch) > 360:
+            if (pitch - last_pitch) > 400:
                 pitch = last_pitch
             else:
                 last_pitch = pitch
             if pitch > 200:
                 adjusted = pitch - 200
                 player.jump_volume(adjusted)
-                DISTANCE = DISTANCE + 1
-                maze, notex, notey = marble(maze, notex, notey,adjusted)
                 print(pitch)
             elif pitch > 10:
                 player.move()
-                DISTANCE = DISTANCE + 1
-                maze, notex, notey = marble(maze, notex, notey, 2)
                 print(pitch)
             else:
                 player.rest()
-                maze, notex, notey = marble(maze, notex, notey, 1)
-            if clock_div == 5:
-                clock_div = 0
-            else:
-                clock_div = clock_div + 1
-            maze, foodx, foody, token = move_food(maze, foodx, foody, notex, notey, clock_div)
-            SCORE = SCORE + token
-            sense.set_pixels(sum(maze,[]))
-            maze[notey][notex] = P
-            maze[foody][foodx] = P
             # scroll da background
             i = 0
-            # Create new obstacle
-            if obstacle_reload:
-                obstacle_reload = obstacle_reload - 1
-            elif not int(random.random() * 20):
-                Obstacle(obstacles, all)
-                obstacle_reload =  OBSTACLE_RELOAD_FRAME
-            # hadouken is good
-            for obstacle in pg.sprite.groupcollide(hadoukens, obstacles, 1,1):
-                Explosion(obstacle, all)
-            # GG sumida
-            for obstacle in pg.sprite.spritecollide(player, obstacles, 1):
-                if pg.mixer and death_sound is not None:
-                    death_sound.play()
-                Explosion(player, all)
-                result = (str(DISTANCE))
-                result += "M, "
-                result += (str(SCORE))
-                result += "FOOD"
-                sense.show_message(result,text_colour=R)
-                player.kill()
+            if (player.moving):
+                # Create new obstacle
+                if obstacle_reload:
+                    obstacle_reload = obstacle_reload - 1
+                elif not int(random.random() * 20):
+                    Obstacle(obstacles, all)
+                    obstacle_reload =  OBSTACLE_RELOAD_FRAME
+                while(i < tiles): 
+                    screen.blit(bgdtile, (bgdtile.get_width()*i + scroll, 0)) 
+                    i += 1
+                scroll -= 6
+                if abs(scroll) > bgdtile.get_width():
+                    scroll = 0
+                # print(scroll)
             pg.display.flip()
             # clear/erase the last drawn sprites
-            all.clear(screen, background)
+            all.clear(screen, bgdtile)
             # update all the sprites
             all.update()
             dirty = all.draw(screen)
-            pg.display.update(dirty)
+            pg.display.update(dirty) 
         # draw the elements
-        pg.mixer.music.stop()
 
 # call the "main" function
 if __name__ == "__main__":
     main()
     pg.quit()
-    sense.clear()
