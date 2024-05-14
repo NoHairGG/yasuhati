@@ -6,7 +6,7 @@ import os
 import pyaudio
 import pygame as pg
 import random
-from sense_hat import SenseHat
+# from sense_hat import SenseHat
 import time
 import threading
 from typing import List
@@ -17,8 +17,8 @@ SCREENRECT = pg.Rect(0, 0, 640, 360)
 OBSTACLE_RELOAD_FRAME = 120
 SCORE = 0
 DISTANCE = 0
-sense = SenseHat()
-sense.low_light = True
+# sense = SenseHat()
+# sense.low_light = True
 
 W = (255, 255, 255)
 P = (0, 0, 0)
@@ -314,7 +314,7 @@ def main(winstyle=0):
                 clock_div = clock_div + 1
             maze, foodx, foody, token = move_food(maze, foodx, foody, notex, notey, clock_div)
             SCORE = SCORE + token
-            sense.set_pixels(sum(maze,[]))
+            # sense.set_pixels(sum(maze,[]))
             maze[notey][notex] = P
             maze[foody][foodx] = P
             # scroll da background
@@ -337,7 +337,7 @@ def main(winstyle=0):
                 result += "M, "
                 result += (str(SCORE))
                 result += "FOOD"
-                sense.show_message(result,text_colour=R)
+                # sense.show_message(result,text_colour=R)
                 player.kill()
             pg.display.flip()
             # clear/erase the last drawn sprites
@@ -353,4 +353,4 @@ def main(winstyle=0):
 if __name__ == "__main__":
     main()
     pg.quit()
-    sense.clear()
+    # sense.clear()
